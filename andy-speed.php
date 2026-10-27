@@ -73,11 +73,19 @@ final class Andy_Speed {
         return $settings['newsletter_defer'] ? true : $existing;
     }
 
+    public static function maybe_defer_newsletter() {
+        // Attach after Core enqueues the script; never remove/rewrite its source.
+        if ( ! self::newsletter_defer( false ) ) { return; }
+        if ( function_exists( 'wp_script_is' ) && wp_script_is( 'yby-newsletter', 'enqueued' ) && function_exists( 'wp_script_add_data' ) ) {
+            wp_script_add_data( 'yby-newsletter', 'strategy', 'defer' );
+        }
+    }
+
     public static function boot() {
         // Only optional filters: no global rewrite of scripts, styles or fonts.
         add_filter( 'andy_core_analytics_debug_only', array( __CLASS__, 'analytics_debug_only' ), 10, 1 );
         add_filter( 'andy_speed_byl_v3_common_css_bundle', array( __CLASS__, 'byl_v3_common_css_bundle' ), 10, 1 );
-        add_filter( 'andy_core_newsletter_defer', array( __CLASS__, 'newsletter_defer' ), 10, 1 );
+        add_action( 'wp_enqueue_scripts', array( __CLASS__, 'maybe_defer_newsletter' ), 1000 );
         if ( ! is_admin() ) { return; }
         add_action( 'admin_menu', array( __CLASS__, 'menu' ) );
         add_action( 'admin_post_andy_speed_settings', array( __CLASS__, 'save' ) );

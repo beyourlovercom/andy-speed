@@ -4,6 +4,9 @@ define( 'ABSPATH', __DIR__ );
 $GLOBALS['speed_options'] = array();
 $GLOBALS['speed_filters'] = array();
 function add_filter( $hook, $fn, $priority = 10, $accepted = 1 ) { $GLOBALS['speed_filters'][ $hook ] = $fn; }
+function add_action( $hook, $fn, $priority = 10 ) { $GLOBALS['speed_actions'][ $hook ] = $fn; }
+function wp_script_is( $handle, $status ) { return ! empty( $GLOBALS['newsletter_enqueued'] ); }
+function wp_script_add_data( $handle, $key, $value ) { $GLOBALS['newsletter_strategy'] = $value; }
 function is_admin() { return false; }
 function get_option( $key, $default = false ) { return $GLOBALS['speed_options'][ $key ] ?? $default; }
 function wp_parse_args( $args, $defaults ) { return array_merge( $defaults, (array) $args ); }
@@ -16,6 +19,8 @@ check_speed( isset( $GLOBALS['speed_filters']['andy_core_analytics_debug_only'] 
 check_speed( Andy_Speed::analytics_debug_only( false ) === false, 'default OFF' );
 check_speed( Andy_Speed::byl_v3_common_css_bundle(false) === false, 'CSS default OFF' );
 check_speed( Andy_Speed::newsletter_defer(false) === false, 'Newsletter default OFF' );
+Andy_Speed::maybe_defer_newsletter();
+check_speed( ! isset( $GLOBALS['newsletter_strategy'] ), 'No JS mutation in default mode' );
 check_speed( Andy_Speed::settings()['mode'] === 'audit', 'default audit' );
 check_speed( Andy_Speed::settings()['emergency_off'] === true, 'default emergency OFF' );
 check_speed( Andy_Speed::sanitize( array( 'mode' => 'bogus', 'emergency_off' => 0 ) )['mode'] === 'audit', 'invalid mode fail closed' );
@@ -24,8 +29,14 @@ check_speed( Andy_Speed::analytics_debug_only( false ) === false, 'kill switch a
 $GLOBALS['speed_options'][ Andy_Speed::OPTION ]['emergency_off'] = 0;
 $GLOBALS['speed_options'][ Andy_Speed::OPTION ]['newsletter_defer'] = 1;
 check_speed( Andy_Speed::newsletter_defer(false) === true, 'Newsletter safe opt-in' );
+$GLOBALS['newsletter_enqueued'] = true;
+Andy_Speed::maybe_defer_newsletter();
+check_speed( $GLOBALS['newsletter_strategy'] === 'defer', 'Opt-in adds official WP defer strategy' );
+unset( $GLOBALS['newsletter_strategy'] );
 $GLOBALS['speed_options'][ Andy_Speed::OPTION ]['newsletter_defer'] = 0;
 check_speed( Andy_Speed::newsletter_defer(false) === false, 'Newsletter feature OFF' );
+Andy_Speed::maybe_defer_newsletter();
+check_speed( ! isset( $GLOBALS['newsletter_strategy'] ), 'OFF does not touch script' );
 $GLOBALS['speed_options'][ Andy_Speed::OPTION ]['byl_v3_common_css_bundle'] = 1;
 check_speed( Andy_Speed::byl_v3_common_css_bundle(false) === true, 'CSS safe opt-in' );
 $GLOBALS['speed_options'][ Andy_Speed::OPTION ]['byl_v3_common_css_bundle'] = 0;
