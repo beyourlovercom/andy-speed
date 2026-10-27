@@ -14,17 +14,24 @@ function check_speed( $condition, $message ) {
 }
 check_speed( isset( $GLOBALS['speed_filters']['andy_core_analytics_debug_only'] ), 'Core optional hook registered' );
 check_speed( Andy_Speed::analytics_debug_only( false ) === false, 'default OFF' );
+check_speed( Andy_Speed::byl_v3_common_css_bundle(false) === false, 'CSS default OFF' );
 check_speed( Andy_Speed::settings()['mode'] === 'audit', 'default audit' );
 check_speed( Andy_Speed::settings()['emergency_off'] === true, 'default emergency OFF' );
 check_speed( Andy_Speed::sanitize( array( 'mode' => 'bogus', 'emergency_off' => 0 ) )['mode'] === 'audit', 'invalid mode fail closed' );
 $GLOBALS['speed_options'][ Andy_Speed::OPTION ] = array( 'mode' => 'safe', 'emergency_off' => 1, 'analytics_diagnostics_debug_only' => 1 );
 check_speed( Andy_Speed::analytics_debug_only( false ) === false, 'kill switch always wins' );
 $GLOBALS['speed_options'][ Andy_Speed::OPTION ]['emergency_off'] = 0;
+$GLOBALS['speed_options'][ Andy_Speed::OPTION ]['byl_v3_common_css_bundle'] = 1;
+check_speed( Andy_Speed::byl_v3_common_css_bundle(false) === true, 'CSS safe opt-in' );
+$GLOBALS['speed_options'][ Andy_Speed::OPTION ]['byl_v3_common_css_bundle'] = 0;
+check_speed( Andy_Speed::byl_v3_common_css_bundle(false) === false, 'CSS feature disable' );
 check_speed( Andy_Speed::analytics_debug_only( false ) === true, 'explicit opt-in works' );
 $GLOBALS['speed_options'][ Andy_Speed::OPTION ]['analytics_diagnostics_debug_only'] = 0;
 check_speed( Andy_Speed::analytics_debug_only( false ) === false, 'per-feature OFF works' );
 check_speed( Andy_Speed::analytics_debug_only( true ) === true, 'never overrides another enabled gate' );
 $GLOBALS['speed_options'][ Andy_Speed::OPTION ]['mode'] = 'audit';
+$GLOBALS['speed_options'][ Andy_Speed::OPTION ]['byl_v3_common_css_bundle'] = 1;
+check_speed( Andy_Speed::byl_v3_common_css_bundle(false) === false, 'CSS audit mode OFF' );
 $GLOBALS['speed_options'][ Andy_Speed::OPTION ]['analytics_diagnostics_debug_only'] = 1;
 check_speed( Andy_Speed::analytics_debug_only( false ) === false, 'audit mode never optimizes' );
 echo "PASS Andy Speed safe defaults, opt-in, kill switch, and reversible filter\n";

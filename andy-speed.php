@@ -23,6 +23,7 @@ final class Andy_Speed {
             'mode' => 'audit',
             'emergency_off' => true,
             'analytics_diagnostics_debug_only' => false,
+            'byl_v3_common_css_bundle' => false,
         );
     }
 
@@ -36,6 +37,7 @@ final class Andy_Speed {
             'mode' => $mode,
             'emergency_off' => ! empty( $raw['emergency_off'] ),
             'analytics_diagnostics_debug_only' => ! empty( $raw['analytics_diagnostics_debug_only'] ),
+            'byl_v3_common_css_bundle' => ! empty( $raw['byl_v3_common_css_bundle'] ),
         );
     }
 
@@ -53,9 +55,18 @@ final class Andy_Speed {
         return $settings['analytics_diagnostics_debug_only'] ? true : $existing;
     }
 
+    public static function byl_v3_common_css_bundle( $existing ) {
+        $settings = self::settings();
+        if ( $settings['emergency_off'] || ! in_array( $settings['mode'], array( 'safe', 'advanced' ), true ) ) {
+            return $existing;
+        }
+        return $settings['byl_v3_common_css_bundle'] ? true : $existing;
+    }
+
     public static function boot() {
-        // Only this optional filter is active on frontend requests.
+        // Only optional filters: no global rewrite of scripts, styles or fonts.
         add_filter( 'andy_core_analytics_debug_only', array( __CLASS__, 'analytics_debug_only' ), 10, 1 );
+        add_filter( 'andy_speed_byl_v3_common_css_bundle', array( __CLASS__, 'byl_v3_common_css_bundle' ), 10, 1 );
         if ( ! is_admin() ) { return; }
         add_action( 'admin_menu', array( __CLASS__, 'menu' ) );
         add_action( 'admin_post_andy_speed_settings', array( __CLASS__, 'save' ) );
@@ -266,6 +277,7 @@ final class Andy_Speed {
                 <tr><th>Emergency OFF</th><td><label><input type="checkbox" name="andy_speed[emergency_off]" value="1" <?php checked( $settings['emergency_off'] ); ?>> Keep all performance modifications OFF</label></td></tr>
                 <tr><th>Core diagnostics policy</th><td><label><input type="checkbox" name="andy_speed[analytics_diagnostics_debug_only]" value="1" <?php checked( $settings['analytics_diagnostics_debug_only'] ); ?>> On compatible Andy Core, load Analytics GTM inspector script only when its debug setting is ON</label>
                 <p class="description">Effective only if the source-side Core compatibility PR is installed and this switch is enabled with emergency OFF cleared. This does not disable GTM, tracking or analytics business logic.</p></td></tr>
+                <tr><th>BYL V3 CSS bundle</th><td><label><input type="checkbox" name="andy_speed[byl_v3_common_css_bundle]" value="1" <?php checked( $settings['byl_v3_common_css_bundle'] ); ?>> Use the verified common CSS bundle on compatible BYL V3 themes</label><p class="description">Disabled by default. Requires the separate BYL theme PR, and fails closed to individual stylesheets when any source checksum differs.</p></td></tr>
                 </tbody></table>
                 <?php submit_button( 'Save Andy Speed settings' ); ?>
             </form>
