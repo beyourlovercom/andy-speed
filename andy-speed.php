@@ -110,6 +110,29 @@ final class Andy_Speed {
         );
     }
 
+    private static function identify_optimizers( $plugins ) {
+        // Installed/active is only a clue; it does not prove an optimization worked.
+        $groups = array(
+            'page-cache' => array( 'wp-rocket', 'litespeed-cache', 'wp-super-cache', 'w3-total-cache', 'wp-fastest-cache', 'cache-enabler', 'flying-press', 'nitropack' ),
+            'asset-loading' => array( 'perfmatters', 'autoptimize', 'wp-asset-clean-up', 'asset-cleanup', 'flying-press', 'wp-rocket' ),
+            'object-cache' => array( 'redis-cache', 'object-cache-pro', 'memcached' ),
+            'image-optimization' => array( 'shortpixel-image-optimiser', 'imagify', 'ewww-image-optimizer', 'wp-smushit', 'webp-express', 'converter-for-media' ),
+        );
+        $result = array();
+        foreach ( $groups as $group => $slugs ) {
+            foreach ( $plugins['regular'] as $plugin ) {
+                if ( 'inactive' === $plugin['status'] ) { continue; }
+                foreach ( $slugs as $slug ) {
+                    if ( $plugin['slug'] === $slug || 0 === strpos( $plugin['slug'], $slug . '-' ) ) {
+                        $result[] = array( 'category' => $group, 'plugin' => $plugin['slug'], 'confidence' => 'active only; impact unverified' );
+                        break;
+                    }
+                }
+            }
+        }
+        return $result;
+    }
+
     private static function autoload_inventory() {
         global $wpdb;
         $where = "autoload IN ('yes','on','auto','auto-on')";
@@ -199,6 +222,7 @@ final class Andy_Speed {
                 'parent_stylesheet' => $theme->parent() ? $theme->parent()->get_stylesheet() : null,
             ),
             'plugins' => $inventory,
+            'optimization_indicators' => self::identify_optimizers( $inventory ),
             'autoload' => self::autoload_inventory(),
             'homepage_probe' => $probe ? self::probe() : null,
             'limitations' => array(
