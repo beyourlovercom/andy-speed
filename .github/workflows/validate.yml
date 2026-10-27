@@ -12,10 +12,12 @@ jobs:
           php -l andy-speed.php
           php tests/safety-harness.php
           php tests/contract-harness.php
+          php tests/byl-css-bundle-contract.php
       - name: Validate reproducible WordPress ZIP
         run: |
           mkdir -p build/andy-speed
           cp andy-speed.php README.md build/andy-speed/
+          cp -R assets build/andy-speed/
           cd build
           zip -qr ../andy-speed-preview.zip andy-speed
           unzip -t ../andy-speed-preview.zip

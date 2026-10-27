@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Andy Speed
  * Description: Independent read-only performance audit and opt-in, reversible WordPress integration gates.
- * Version: 0.2.0
+ * Version: 0.2.1
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: beyourlovercom
@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 if ( ! class_exists( 'Andy_Speed' ) ) {
 final class Andy_Speed {
-    const VERSION = '0.2.0';
+    const VERSION = '0.2.1';
     const OPTION = 'andy_speed_settings_v1';
     const SLUG = 'andy-speed';
 
@@ -81,11 +81,63 @@ final class Andy_Speed {
         }
     }
 
+    /**
+     * BYL Dev adapter: immutable, explicitly opt-in replacement of six
+     * static theme CSS URLs with one pre-built asset. Other theme files,
+     * styles from third-party plugins, fonts, payments, and JS are untouched.
+     * If any source changes (including CRLF), fail closed to legacy CSS.
+     */
+    public static function maybe_bundle_theme_css() {
+        if ( ! self::byl_v3_common_css_bundle( false ) || is_admin() ) { return; }
+        if ( ! function_exists( 'get_stylesheet' ) || get_stylesheet() !== 'beyourlover-v3' ) { return; }
+        if ( ! function_exists( 'wp_styles' ) || ! function_exists( 'get_stylesheet_directory' ) ) { return; }
+        $styles = wp_styles();
+        if ( ! is_object( $styles ) || ! isset( $styles->registered ) ) { return; }
+        $root = get_stylesheet_directory();
+        $base_url = function_exists( 'get_stylesheet_directory_uri' ) ? get_stylesheet_directory_uri() : '';
+        if ( ! is_string( $base_url ) || '' === $base_url ) { return; }
+        $bundle_rel = 'assets/byl-v3/common.bundle.css';
+        $manifest_rel = 'assets/byl-v3/common.bundle.manifest.json';
+        $bundle = plugin_dir_path( __FILE__ ) . $bundle_rel;
+        $manifest_path = plugin_dir_path( __FILE__ ) . $manifest_rel;
+        if ( ! is_file( $bundle ) || ! is_file( $manifest_path ) ) { return; }
+        $manifest = json_decode( (string) file_get_contents( $manifest_path ), true );
+        if ( ! is_array( $manifest ) || ( $manifest['schema'] ?? null ) !== 1 ) { return; }
+        $names = array( 'style.css','assets/css/tokens.css','assets/css/components.css',
+            'assets/css/component-library.css','assets/css/shell.css','assets/css/motion.css' );
+        $handles = array( 'byl-v3-foundation','byl-v3-tokens','byl-v3-components',
+            'byl-v3-component-library','byl-v3-shell','byl-v3-motion' );
+        if ( array_keys( $manifest['sources'] ?? array() ) !== $names ) { return; }
+        if ( ! is_string( $manifest['bundle_sha256'] ?? null )
+            || ! hash_equals( $manifest['bundle_sha256'], hash_file( 'sha256', $bundle ) ) ) { return; }
+        foreach ( $names as $index => $name ) {
+            $path = $root . '/' . $name;
+            if ( ! is_file( $path ) || ! hash_equals( $manifest['sources'][ $name ], hash_file( 'sha256', $path ) ) ) { return; }
+            $handle = $handles[ $index ];
+            if ( ! isset( $styles->registered[ $handle ] ) || ! wp_style_is( $handle, 'enqueued' ) ) { return; }
+            $entry = $styles->registered[ $handle ];
+            $expected_url = $index === 0 ? get_stylesheet_uri() : $base_url . '/' . $name;
+            if ( $entry->src !== $expected_url ) { return; }
+            // Inline CSS and conditional media rules could be lost: never pack those handles.
+            foreach ( array( 'after','before','conditional','rtl' ) as $extra ) {
+                if ( ! empty( $entry->extra[ $extra ] ) ) { return; }
+            }
+            if ( ! empty( $entry->args ) && $entry->args !== 'all' ) { return; }
+        }
+        // All checks complete before ANY URL is modified; one atomic, reversible change.
+        $styles->registered['byl-v3-foundation']->src = plugins_url( $bundle_rel, __FILE__ );
+        $styles->registered['byl-v3-foundation']->ver = substr( $manifest['bundle_sha256'], 0, 12 );
+        for ( $i = 1; $i < count( $handles ); $i++ ) {
+            $styles->registered[ $handles[ $i ] ]->src = false;
+        }
+    }
+
     public static function boot() {
         // Only optional filters: no global rewrite of scripts, styles or fonts.
         add_filter( 'andy_core_analytics_debug_only', array( __CLASS__, 'analytics_debug_only' ), 10, 1 );
         add_filter( 'andy_speed_byl_v3_common_css_bundle', array( __CLASS__, 'byl_v3_common_css_bundle' ), 10, 1 );
         add_action( 'wp_enqueue_scripts', array( __CLASS__, 'maybe_defer_newsletter' ), 1000 );
+        add_action( 'wp_enqueue_scripts', array( __CLASS__, 'maybe_bundle_theme_css' ), 1001 );
         if ( ! is_admin() ) { return; }
         add_action( 'admin_menu', array( __CLASS__, 'menu' ) );
         add_action( 'admin_post_andy_speed_settings', array( __CLASS__, 'save' ) );
