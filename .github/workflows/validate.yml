@@ -13,6 +13,7 @@ jobs:
           php tests/safety-harness.php
           php tests/contract-harness.php
           php tests/byl-css-bundle-contract.php
+          php tests/anonymous-cache-eligibility-harness.php
       - name: Validate reproducible WordPress ZIP
         run: |
           mkdir -p build/andy-speed
