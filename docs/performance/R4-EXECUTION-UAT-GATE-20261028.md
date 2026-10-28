@@ -136,3 +136,36 @@ Keep PR Draft and production untouched. Next: use authenticated
 GTmetrix Performance report waterfall and per-metric scoring to target
 FCP/Speed Index/LCP without changing Woo/Stripe/AffiliateWP behavior;
 rerun GTmetrix at identical Analysis Options to sign off A/90.
+
+
+
+## Owner acceptance decision — 2026-10-28 (supersedes A/90 as current performance gate)
+
+On 2026-10-28, after reviewing the official GTmetrix retest and confirming
+all five BYL Dev visual/non-payment checks PASS, Owner explicitly stated:
+“没有必要，暂时已经很好了，可以记录为达成条件。”
+(Performance is sufficiently good for now; record the phase as accepted.)
+
+**Decision: Andy Speed Dev performance-stage acceptance = OWNER PASS.**
+
+The accepted evidence is **GTmetrix Grade B, Performance 86%, Structure
+93%, LCP 1.7s, TBT 0ms, CLS 0**, plus Mobile Lighthouse simulated
+scores 87/92/93 (median 92) and the five passed manual Dev checks.
+This acceptance deliberately **relaxes the former GTmetrix Grade A /
+Performance >=90 release gate for this performance phase only**.
+It is NOT a statement that an A or 90% score was measured. GTmetrix
+Grade A / Performance 90+ is now an **optional future improvement target**,
+not an active blocker requiring further optimization.
+
+**Scope of PASS:** BYL Dev performance/visual/non-payment UAT.
+No further GTmetrix retest or TBT-chasing changes are required for this
+phase. Preserve the current safe Speed plugin and approved responsive
+asset configuration; no new hosting costs.
+
+**Unchanged independent gates:** Stripe TEST gateway payment methods,
+3DS, refunds, webhook, marketing coupon/gift integration, shipping/tax
+mixed-case checks, source-drift protection for four Dev-only shipping
+loaders, three Draft PR merge/release workflow and explicit Owner
+production deployment PASS. This acceptance does not approve merging
+any PR or deploying to WWW. Do not rewrite historical report metrics
+or represent GTmetrix Grade B as A.

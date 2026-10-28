@@ -72,3 +72,20 @@ and thus A, but an actual GTmetrix rerun is required to certify it.
 - Never equate a local 99 Performance with GTmetrix Grade A.
 - A genuine new GTmetrix A/Performance>=90 + site UAT is the separate gate.
 - Production changes are not authorized by this document or by PR CI.
+
+
+
+## Later Owner acceptance override — 2026-10-28
+
+The targets above are preserved as historical engineering aspirations
+and diagnostics, **not current blocking performance release criteria**.
+After the verified GTmetrix retest (B / Performance 86 / Structure 93 /
+LCP 1.7s / TBT 0ms / CLS 0) and Owner visual UAT 5/5 PASS, Owner
+explicitly approved **current Dev performance as meeting this phase's
+acceptance criteria**, without demanding further A/90 optimization.
+GTmetrix A/90 and mobile real-throttle LCP <2.5s remain optional
+follow-up goals; they have NOT been measured as achieved.
+
+Other independent payment/marketing/Dev-shipping source preservation
+and production approval requirements are unchanged. No PR merge,
+Production deployment or server-cost increase is implied.
