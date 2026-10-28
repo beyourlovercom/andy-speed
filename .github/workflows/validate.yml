@@ -7,6 +7,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: PHP syntax and safety harness
         run: |
           php -l andy-speed.php
@@ -14,6 +16,10 @@ jobs:
           php tests/contract-harness.php
           php tests/byl-css-bundle-contract.php
           php tests/anonymous-cache-eligibility-harness.php
+          php tests/release-sign-harness.php
+      - name: Validate immutable exact-main release ZIP and source SHA
+        run: |
+          python3 scripts/build-v0.2.1-signed-candidate.py --output "$(mktemp -d)"
       - name: Validate reproducible WordPress ZIP
         run: |
           mkdir -p build/andy-speed

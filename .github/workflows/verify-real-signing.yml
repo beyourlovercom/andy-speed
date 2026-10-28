@@ -1,0 +1,51 @@
+name: Andy Speed v0.2.1 real signature verification (manual; no publish)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: andy-speed-v0.2.1-signing-proof
+  cancel-in-progress: false
+
+jobs:
+  signature-proof:
+    if: github.repository == 'beyourlovercom/andy-speed' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment: andy-speed-signing
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Validate signer, verifier and ephemeral rejection tests
+        run: |
+          php -l scripts/sign-update-metadata.php
+          php -l scripts/verify-update-metadata.php
+          php tests/release-sign-harness.php
+
+      - name: Build immutable accepted v0.2.1 release ZIP
+        run: python3 scripts/build-v0.2.1-signed-candidate.py --output "$RUNNER_TEMP/speed-signing-proof"
+
+      - name: Real Ed25519 signing and verification; no publication
+        shell: bash
+        env:
+          ANDY_SPEED_UPDATE_SIGNING_SECRET: ${{ secrets.ANDY_SPEED_UPDATE_SIGNING_SECRET }}
+        run: |
+          set -euo pipefail
+          test -n "${ANDY_SPEED_UPDATE_SIGNING_SECRET:-}" || { echo "BLOCKED: protected signing secret missing"; exit 1; }
+          KEYFILE=config/andy-speed-release-public-key.b64
+          test -f "$KEYFILE" || { echo "BLOCKED: pinned public key not approved"; exit 1; }
+          PUB="$(tr -d '\r\n' < "$KEYFILE")"
+          test -n "$PUB"
+          DEST="$RUNNER_TEMP/speed-signing-proof"
+          php scripts/sign-update-metadata.php "$DEST/update-metadata.json" "$DEST/update-metadata.sig" "$PUB"
+          php scripts/verify-update-metadata.php "$DEST/update-metadata.json" "$DEST/update-metadata.sig" "$DEST/andy-speed-v0.2.1.zip" "$PUB"
+          echo "REAL_ED25519_SIGNATURE_VERIFIED=PASS"
+          echo "SIGNED_ARTIFACT_UPLOAD=DISABLED"
+          echo "GITHUB_STABLE_RELEASE_PUBLISHED=NO"
+          echo "WWW_DEPLOYMENT=NO"
