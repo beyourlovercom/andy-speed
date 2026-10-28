@@ -33,7 +33,10 @@ $sig = base64_encode(sodium_crypto_sign_detached($meta, $secret)) . "\n";
 sodium_memzero($secret);
 $handle = @fopen($argv[2], 'x');
 if (!$handle) { fwrite(STDERR, "BLOCKED: cannot create detached signature\n"); exit(8); }
-fchmod($handle, 0600);
+if (!@chmod($argv[2], 0600)) {
+    fclose($handle); @unlink($argv[2]);
+    fwrite(STDERR, "BLOCKED: cannot secure detached signature file\n"); exit(9);
+}
 $wrote = fwrite($handle, $sig);
 fclose($handle);
 if ($wrote !== strlen($sig)) { @unlink($argv[2]); fwrite(STDERR, "BLOCKED: partial signature write\n"); exit(9); }
