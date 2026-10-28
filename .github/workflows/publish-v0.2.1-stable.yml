@@ -1,0 +1,137 @@
+name: Andy Speed v0.2.1 Stable — signed publish (manual, approved)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: andy-speed-v0.2.1-stable-publication
+  cancel-in-progress: false
+
+jobs:
+  stable-release:
+    if: github.repository == 'beyourlovercom/andy-speed' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: andy-speed-signing
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact approved GitHub main
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Fail closed if release/tag already exists or branch moved
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$GITHUB_REPOSITORY" = "beyourlovercom/andy-speed"
+          NOW="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
+          test "$NOW" = "$GITHUB_SHA" || { echo 'BLOCKED: main changed'; exit 3; }
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v0.2.1" >/dev/null 2>&1; then
+            echo "BLOCKED: v0.2.1 tag already exists"; exit 4
+          fi
+          if gh release view v0.2.1 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "BLOCKED: v0.2.1 release already exists"; exit 5
+          fi
+          test -f config/andy-speed-release-public-key.b64
+          printf '%s\n' 'CLEAN_TAG_RELEASE_PREFLIGHT=PASS'
+
+      - name: Run safety and signing rejection tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l andy-speed.php
+          php tests/safety-harness.php
+          php tests/contract-harness.php
+          php tests/byl-css-bundle-contract.php
+          php tests/anonymous-cache-eligibility-harness.php
+          php tests/release-sign-harness.php
+
+      - name: Deterministically build v0.2.1 immutable accepted plugin
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/build-v0.2.1-signed-candidate.py --output "$RUNNER_TEMP/andy-speed-stable-release"
+          cp docs/release/RELEASE_NOTES_v0.2.1.md "$RUNNER_TEMP/andy-speed-stable-release/RELEASE_NOTES_v0.2.1.md"
+          cp docs/release/ROLLBACK_GUIDE_v0.2.1.md "$RUNNER_TEMP/andy-speed-stable-release/ROLLBACK_GUIDE_v0.2.1.md"
+          cp config/andy-speed-release-public-key.b64 "$RUNNER_TEMP/andy-speed-stable-release/andy-speed-ed25519-public-key.b64"
+          printf 'GitHub tag: v0.2.1\nRelease pipeline commit: %s\nImmutable plugin source commit: ebb64abb79273e4806806d4f3c1109f0a38fcd60\nZIP SHA256: cce5f9755f7944e4ddbf0776ed87ec3b4d29721101da2d88cff2a0eb84aba9ae\n' "$GITHUB_SHA" > "$RUNNER_TEMP/andy-speed-stable-release/BUILD_INFO.md"
+
+      - name: Real independent Ed25519 sign and verify before any upload
+        shell: bash
+        env:
+          ANDY_SPEED_UPDATE_SIGNING_SECRET: ${{ secrets.ANDY_SPEED_UPDATE_SIGNING_SECRET }}
+        run: |
+          set -euo pipefail
+          test -n "$ANDY_SPEED_UPDATE_SIGNING_SECRET" || { echo "BLOCKED: signing secret absent"; exit 6; }
+          PUB="$(tr -d '\r\n' < config/andy-speed-release-public-key.b64)"
+          test "$PUB" = "ipTu0xljSNLbe9BdWFEaFTVWY3FPS+y3Xkd0IcSbYXo="
+          DEST="$RUNNER_TEMP/andy-speed-stable-release"
+          php scripts/sign-update-metadata.php "$DEST/update-metadata.json" "$DEST/update-metadata.sig" "$PUB"
+          php scripts/verify-update-metadata.php "$DEST/update-metadata.json" "$DEST/update-metadata.sig" "$DEST/andy-speed-v0.2.1.zip" "$PUB"
+          echo "cce5f9755f7944e4ddbf0776ed87ec3b4d29721101da2d88cff2a0eb84aba9ae  $DEST/andy-speed-v0.2.1.zip" | sha256sum --check --status
+          echo "733f051254cc24a50d15d1c3aaa6fa1ba174ff8b659b23ae634939b0ca42eb8b  $DEST/update-metadata.json" | sha256sum --check --status
+          echo "PREPUBLICATION_SIGNATURE_AND_PACKAGE=PASS"
+
+      - name: Create DRAFT GitHub release and upload only verified assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          DEST="$RUNNER_TEMP/andy-speed-stable-release"
+          gh release create v0.2.1 \
+            "$DEST/andy-speed-v0.2.1.zip" \
+            "$DEST/SHA256.txt" \
+            "$DEST/update-metadata.json" \
+            "$DEST/update-metadata.sig" \
+            "$DEST/andy-speed-ed25519-public-key.b64" \
+            "$DEST/BUILD_INFO.md" \
+            "$DEST/RELEASE_NOTES_v0.2.1.md" \
+            "$DEST/ROLLBACK_GUIDE_v0.2.1.md" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title 'Andy Speed v0.2.1 Stable' \
+            --notes-file "$DEST/RELEASE_NOTES_v0.2.1.md" \
+            --draft
+          echo "DRAFT_RELEASE_UPLOADED=PASS"
+
+      - name: Download back and independently verify every public release asset
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          DEST="$RUNNER_TEMP/andy-speed-stable-release"
+          CHECK="$RUNNER_TEMP/andy-speed-stable-verify"
+          mkdir -p "$CHECK"
+          gh release download v0.2.1 --repo "$GITHUB_REPOSITORY" --dir "$CHECK"
+          for ITEM in andy-speed-v0.2.1.zip SHA256.txt update-metadata.json update-metadata.sig andy-speed-ed25519-public-key.b64 BUILD_INFO.md RELEASE_NOTES_v0.2.1.md ROLLBACK_GUIDE_v0.2.1.md; do
+            test -s "$CHECK/$ITEM"
+            cmp "$DEST/$ITEM" "$CHECK/$ITEM"
+          done
+          PUB="$(tr -d '\r\n' < "$CHECK/andy-speed-ed25519-public-key.b64")"
+          php scripts/verify-update-metadata.php "$CHECK/update-metadata.json" "$CHECK/update-metadata.sig" "$CHECK/andy-speed-v0.2.1.zip" "$PUB"
+          (cd "$CHECK" && sha256sum --check SHA256.txt)
+          echo "DOWNLOADED_DRAFT_RELEASE_ALL_ASSETS_SIGNED_AND_HASHED=PASS"
+
+      - name: Publish verified Stable Release and read back tag
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release edit v0.2.1 --repo "$GITHUB_REPOSITORY" --draft=false --latest
+          RELEASE="$(gh release view v0.2.1 --repo "$GITHUB_REPOSITORY" --json isDraft,isPrerelease,url,tagName,targetCommitish,assets)"
+          echo "$RELEASE" | jq -e '.isDraft == false and .isPrerelease == false and .tagName == "v0.2.1" and (.assets|length) == 8' >/dev/null
+          TAG_SHA="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v0.2.1" --jq .object.sha)"
+          test "$TAG_SHA" = "$GITHUB_SHA"
+          echo "VERIFIED_STABLE_RELEASE_URL=$(echo "$RELEASE" | jq -r .url)"
+          echo "STABLE_RELEASE_PUBLISHED=PASS"
+          echo "WORDPRESS_DEV_WWW_CHANGED=NO"
