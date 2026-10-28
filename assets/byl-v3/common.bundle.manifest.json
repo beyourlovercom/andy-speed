@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "theme": "beyourlover-v3",
+  "source_urls_base": "/wp-content/themes/beyourlover-v3/",
+  "sources": {
+    "style.css": "6ae81d43c292d456c55ab73de041d8dc46ba368166dc0d7557a76e3c16be316d",
+    "assets/css/tokens.css": "86dd3f47cc4c3d51437e16ca59496840aead70759c85eacdc49e78b168cf166d",
+    "assets/css/components.css": "17d7d9901e02cd778d9c7b340887128e1e7ef3b2b4f58df1af3b7a195afe1a72",
+    "assets/css/component-library.css": "dc0fd50c71128fdf9d524cab6b5b41be57fdd850df93b1d78ef30d01ac3a3b31",
+    "assets/css/shell.css": "507cac8065d85d6292d089e9cfc6588cc6c8930c6e160e51895988b2a2b4db0a",
+    "assets/css/motion.css": "323e0d2e156fa66c6f71f6ae5b54c9d9d246ccb231f0a80c5bac3f1f995acf65"
+  },
+  "bundle_sha256": "5730d982dc3187e8cd82f396cdc2686f6f3c57abc228b828df6aed407c45a0d2",
+  "contract": "Exact hash match for all six real theme files; fail closed on drift; do not rewrite CSS on runtime"
+}
