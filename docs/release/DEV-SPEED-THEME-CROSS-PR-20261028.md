@@ -69,3 +69,16 @@ Performance acceptance remains archived exactly as Owner approved:
 GTmetrix Grade B, Performance 86%, Structure 93%, LCP 1.7s,
 TBT 0ms, CLS 0 and prior mobile Lighthouse median 92.
 No reopening A/90 optimization.
+
+## Authenticated live Dev source parity — 2026-10-28 addendum
+
+Renewed WordPress admin access resolved the prior expired-login block.
+Current Dev Speed PHP SHA-256 exactly equals the separately built
+v0.2.1 candidate ZIP and GitHub source; both source+manifest CSS bytes
+also match the running Dev asset URLs. Live BYL V3 front-page.php and
+functions.php SHA-256 values exactly equal the previously recorded
+accepted Dev baselines; footer currency and four special Dev-only
+shipping loaders still exist. Dev Speed Safe CSS ON, Emergency OFF
+unchecked, Analytics and Newsletter gates OFF. All evidence obtained
+read-only, and previously unverified admin state now **PASS**.
+This does not approve a whole Theme ZIP update or Stripe activation.
