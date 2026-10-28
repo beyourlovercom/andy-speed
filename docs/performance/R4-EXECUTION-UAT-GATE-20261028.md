@@ -102,3 +102,37 @@
 
 This document contains only test-summary metadata, no customer names,
 addresses, payment credentials, nonces or private session values.
+
+## Owner sign-off and new external GTmetrix report — 2026-10-28
+
+Owner explicitly reported that all five manual BYL Dev visual and
+non-payment Checkout checks **PASS**: header/logo/hero/fonts, mobile
+layout, SKULL MAN Add to Cart/drawer, USD/EUR cart amount, and Checkout
+address/total UI. This signs off **visual + non-payment manual UAT only**.
+It does not waive payment, webhook, refund, GTmetrix A, or the
+separately protected Dev-only shipping modules and valid marketing
+campaign UAT.
+
+New authentic GTmetrix report obtained via the user's authorized
+Chrome session:
+https://gtmetrix.com/reports/dev.beyourlover.com/7GN9O8fq/
+
+- Report generated Tue Oct 27 2026 21:12 -0700, Seattle, Chrome 154,
+  Lighthouse 12.6.1 (matching prior test location/browser).
+- New result: **Grade B, Performance 86%, Structure 93%, LCP 1.7s,
+  TBT 0ms, CLS 0**.
+- Prior owner-supplied result dated Oct 27 18:20 -0700:
+  Grade B, Performance 77%, Structure 92%, LCP 1.3s, TBT 390ms, CLS 0.
+- Changes between reports: Performance +9 percentage points, Structure
+  +1, TBT -390ms, LCP +0.4s. Not a controlled A/B, so do not attribute
+  all variance to one plugin or code change.
+- **GTmetrix A/Performance >=90 is NOT met**; the remaining 4
+  percentage points must be investigated. TBT <=150 is now satisfied.
+- Public/unauthenticated GTmetrix view shows summary only; Performance
+  detail/Waterfall/Long Tasks behind account login were not available.
+  Do not claim to know exact remaining score loss contributors.
+
+Keep PR Draft and production untouched. Next: use authenticated
+GTmetrix Performance report waterfall and per-metric scoring to target
+FCP/Speed Index/LCP without changing Woo/Stripe/AffiliateWP behavior;
+rerun GTmetrix at identical Analysis Options to sign off A/90.
