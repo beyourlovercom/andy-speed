@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Andy Speed
  * Description: Independent read-only performance audit and opt-in, reversible WordPress integration gates.
- * Version: 0.2.1
+ * Version: 0.3.0-dev
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: beyourlovercom
@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 if ( ! class_exists( 'Andy_Speed' ) ) {
 final class Andy_Speed {
-    const VERSION = '0.2.1';
+    const VERSION = '0.3.0-dev';
     const OPTION = 'andy_speed_settings_v1';
     const SLUG = 'andy-speed';
 
@@ -25,6 +25,7 @@ final class Andy_Speed {
             'analytics_diagnostics_debug_only' => false,
             'byl_v3_common_css_bundle' => false,
             'newsletter_defer' => false,
+            'pairdoll_mobile_slider_stability' => false,
         );
     }
 
@@ -40,6 +41,7 @@ final class Andy_Speed {
             'analytics_diagnostics_debug_only' => ! empty( $raw['analytics_diagnostics_debug_only'] ),
             'byl_v3_common_css_bundle' => ! empty( $raw['byl_v3_common_css_bundle'] ),
             'newsletter_defer' => ! empty( $raw['newsletter_defer'] ),
+            'pairdoll_mobile_slider_stability' => ! empty( $raw['pairdoll_mobile_slider_stability'] ),
         );
     }
 
@@ -133,6 +135,8 @@ final class Andy_Speed {
     }
 
     public static function boot() {
+        require_once plugin_dir_path( __FILE__ ) . 'includes/pairdoll-performance.php';
+        add_action( 'elementor/frontend/widget/before_render', array( 'Andy_Speed_Pairdoll', 'stable_mobile_slider' ), 10, 1 );
         // Only optional filters: no global rewrite of scripts, styles or fonts.
         add_filter( 'andy_core_analytics_debug_only', array( __CLASS__, 'analytics_debug_only' ), 10, 1 );
         add_filter( 'andy_speed_byl_v3_common_css_bundle', array( __CLASS__, 'byl_v3_common_css_bundle' ), 10, 1 );
@@ -307,6 +311,7 @@ final class Andy_Speed {
             'optimization_indicators' => self::identify_optimizers( $inventory ),
             'autoload' => self::autoload_inventory(),
             'homepage_probe' => $probe ? self::probe() : null,
+            'pairdoll_readiness' => Andy_Speed_Pairdoll::readiness(),
             'limitations' => array(
                 'Audit is not a browser or Lighthouse measurement.',
                 'No secret values, customer data or server config file contents are exported.',
@@ -350,6 +355,7 @@ final class Andy_Speed {
                 <p class="description">Effective only if the source-side Core compatibility PR is installed and this switch is enabled with emergency OFF cleared. This does not disable GTM, tracking or analytics business logic.</p></td></tr>
                 <tr><th>Core Newsletter JS</th><td><label><input type="checkbox" name="andy_speed[newsletter_defer]" value="1" <?php checked( $settings['newsletter_defer'] ); ?>> Add defer to the Core-owned Newsletter script (never unload it)</label><p class="description">Keeps newsletter forms and confirmation/unsubscribe token actions available. Core compatibility required.</p></td></tr>
                 <tr><th>BYL V3 CSS bundle</th><td><label><input type="checkbox" name="andy_speed[byl_v3_common_css_bundle]" value="1" <?php checked( $settings['byl_v3_common_css_bundle'] ); ?>> Use the verified common CSS bundle on compatible BYL V3 themes</label><p class="description">Disabled by default. Requires the separate BYL theme PR, and fails closed to individual stylesheets when any source checksum differs.</p></td></tr>
+                <tr><th>PairDoll mobile hero stability</th><td><label><input type="checkbox" name="andy_speed[pairdoll_mobile_slider_stability]" value="1" <?php checked( $settings['pairdoll_mobile_slider_stability'] ); ?>> Prevent timed auto-rotation of the PairDoll homepage mobile Elementor slides</label><p class="description">Experimental and OFF by default. Exact domain, Woodmart child theme, homepage and mobile-only widget ID are required. Manual navigation and desktop slider remain unchanged. Requires Safe mode with Emergency OFF unchecked; perform before/after mobile Lighthouse and visible UAT.</p></td></tr>
                 </tbody></table>
                 <?php submit_button( 'Save Andy Speed settings' ); ?>
             </form>
