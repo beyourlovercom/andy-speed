@@ -135,7 +135,7 @@ final class Andy_Speed {
     }
 
     public static function boot() {
-        require_once plugin_dir_path( __FILE__ ) . 'includes/pairdoll-performance.php';
+        require_once __DIR__ . '/includes/pairdoll-performance.php';
         add_action( 'elementor/frontend/widget/before_render', array( 'Andy_Speed_Pairdoll', 'stable_mobile_slider' ), 10, 1 );
         // Only optional filters: no global rewrite of scripts, styles or fonts.
         add_filter( 'andy_core_analytics_debug_only', array( __CLASS__, 'analytics_debug_only' ), 10, 1 );
