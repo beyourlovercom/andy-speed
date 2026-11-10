@@ -17,8 +17,8 @@ $labels = array(
     '<th>订阅脚本延迟加载</th>',
     '<th>BYL V3 样式合并</th>',
     '<th>PairDoll 手机轮播稳定性</th>',
-    '<th>PairDoll 手机首屏 WebP</th>',
-    '<th>PairDoll Logo 响应式 WebP</th>',
+    '<th>PairDoll 手机首屏原图预加载</th>',
+    '不进行二次压缩或转码',
     '保存 Andy Speed 设置',
     '<h2>只读环境信息</h2>',
     '<h2>导出只读诊断报告</h2>',
@@ -36,9 +36,11 @@ foreach ( array( 'Independent opt-in performance gate.', 'Settings saved.', 'Saf
 foreach ( array( "const OPTION = 'andy_speed_settings_v1'", "const SLUG = 'andy-speed'",
     "name=\"andy_speed[mode]\"", "name=\"andy_speed[emergency_off]\"",
     "name=\"andy_speed[pairdoll_mobile_slider_stability]\"",
-    "name=\"andy_speed[pairdoll_mobile_hero_webp]\"",
-    "name=\"andy_speed[pairdoll_logo_webp]\"",
+    "name=\"andy_speed[pairdoll_mobile_hero_preload]\"",
     "wp_safe_redirect( admin_url(" ) as $api ) {
     assert_copy( false !== strpos( $source, $api ), 'Persistent settings contract unchanged' );
+}
+foreach ( array( 'name="andy_speed[pairdoll_mobile_hero_webp]"', 'name="andy_speed[pairdoll_logo_webp]"' ) as $obsolete ) {
+    assert_copy( false === strpos( $source, $obsolete ), 'Obsolete WebP replacement controls removed' );
 }
 echo "PASS: Andy Speed full Simplified Chinese admin UI contract\n";
