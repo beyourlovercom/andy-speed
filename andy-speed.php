@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Andy Speed
  * Description: Independent read-only performance audit and opt-in, reversible WordPress integration gates.
- * Version: 0.3.0-dev
+ * Version: 0.3.1-dev
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: beyourlovercom
@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 if ( ! class_exists( 'Andy_Speed' ) ) {
 final class Andy_Speed {
-    const VERSION = '0.3.0-dev';
+    const VERSION = '0.3.1-dev';
     const OPTION = 'andy_speed_settings_v1';
     const SLUG = 'andy-speed';
 
@@ -150,6 +150,7 @@ final class Andy_Speed {
         add_action( 'wp_enqueue_scripts', array( __CLASS__, 'maybe_bundle_theme_css' ), 1001 );
         if ( ! is_admin() ) { return; }
         add_action( 'admin_menu', array( __CLASS__, 'menu' ) );
+        add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( __CLASS__, 'plugin_settings_link' ) );
         add_action( 'admin_post_andy_speed_settings', array( __CLASS__, 'save' ) );
         add_action( 'admin_post_andy_speed_export', array( __CLASS__, 'export' ) );
     }
@@ -162,6 +163,20 @@ final class Andy_Speed {
 
     public static function menu() {
         add_management_page( 'Andy Speed', 'Andy Speed', 'manage_options', self::SLUG, array( __CLASS__, 'page' ) );
+    }
+
+    /**
+     * One-click entry from Plugins > Andy Speed, beside Deactivate.
+     * Reuses the existing Tools > Andy Speed page without creating a second screen.
+     */
+    public static function plugin_settings_link( $links ) {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return $links;
+        }
+        $url = admin_url( 'tools.php?page=' . self::SLUG );
+        $settings_link = '<a href="' . esc_url( $url ) . '">' . esc_html__( 'Settings', 'andy-speed' ) . '</a>';
+        array_unshift( $links, $settings_link );
+        return $links;
     }
 
     public static function save() {
