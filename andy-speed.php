@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Andy Speed
- * Description: Independent read-only performance audit and opt-in, reversible WordPress integration gates.
- * Version: 0.3.1-dev
+ * Description: WordPress 性能诊断与可回滚优化插件；默认仅审计，所有优化默认关闭。
+ * Version: 0.3.2-dev
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: beyourlovercom
@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 if ( ! class_exists( 'Andy_Speed' ) ) {
 final class Andy_Speed {
-    const VERSION = '0.3.1-dev';
+    const VERSION = '0.3.2-dev';
     const OPTION = 'andy_speed_settings_v1';
     const SLUG = 'andy-speed';
 
@@ -157,7 +157,7 @@ final class Andy_Speed {
 
     private static function require_admin() {
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_die( esc_html__( 'Access denied.', 'andy-speed' ), '', array( 'response' => 403 ) );
+            wp_die( esc_html__( '无权访问此页面。', 'andy-speed' ), '', array( 'response' => 403 ) );
         }
     }
 
@@ -174,7 +174,7 @@ final class Andy_Speed {
             return $links;
         }
         $url = admin_url( 'tools.php?page=' . self::SLUG );
-        $settings_link = '<a href="' . esc_url( $url ) . '">' . esc_html__( 'Settings', 'andy-speed' ) . '</a>';
+        $settings_link = '<a href="' . esc_url( $url ) . '">' . esc_html__( '设置', 'andy-speed' ) . '</a>';
         array_unshift( $links, $settings_link );
         return $links;
     }
@@ -360,43 +360,43 @@ final class Andy_Speed {
         ?>
         <div class="wrap">
             <h1>Andy Speed <small><?php echo esc_html( self::VERSION ); ?></small></h1>
-            <p><strong>Independent opt-in performance gate.</strong> Default is Audit Only, with emergency OFF. No rewriting of CSS/JS/font files, cache flush, background jobs, payments, or customer data.</p>
-            <?php if ( isset( $_GET['saved'] ) ) : ?><div class="notice notice-success"><p>Settings saved.</p></div><?php endif; ?>
-            <h2>Safe runtime settings</h2>
+            <p><strong>独立性能诊断与可选优化插件。</strong> 默认处于「仅审计」模式，并开启紧急关闭保护。插件不会擅自修改 CSS、JS、字体文件，不会自动清理缓存、创建后台任务，也不会修改付款流程或客户数据。</p>
+            <?php if ( isset( $_GET['saved'] ) ) : ?><div class="notice notice-success"><p>设置已保存。</p></div><?php endif; ?>
+            <h2>安全运行设置</h2>
             <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
                 <input type="hidden" name="action" value="andy_speed_settings">
                 <?php wp_nonce_field( 'andy_speed_settings' ); ?>
                 <table class="form-table"><tbody>
-                <tr><th>Execution mode</th><td><select name="andy_speed[mode]">
-                <?php foreach ( array( 'audit' => 'Level 0 — Audit only', 'safe' => 'Level 1 — Safe opt-in', 'advanced' => 'Level 2 — Reserved; no advanced optimizer yet' ) as $value => $label ) : ?>
+                <tr><th>运行模式</th><td><select name="andy_speed[mode]">
+                <?php foreach ( array( 'audit' => '0 级 — 仅审计（不启用优化）', 'safe' => '1 级 — 安全优化（需逐项开启）', 'advanced' => '2 级 — 预留高级模式（暂未提供高级优化）' ) as $value => $label ) : ?>
                 <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $settings['mode'], $value ); ?>><?php echo esc_html( $label ); ?></option>
                 <?php endforeach; ?></select></td></tr>
-                <tr><th>Emergency OFF</th><td><label><input type="checkbox" name="andy_speed[emergency_off]" value="1" <?php checked( $settings['emergency_off'] ); ?>> Keep all performance modifications OFF</label></td></tr>
-                <tr><th>Core diagnostics policy</th><td><label><input type="checkbox" name="andy_speed[analytics_diagnostics_debug_only]" value="1" <?php checked( $settings['analytics_diagnostics_debug_only'] ); ?>> On compatible Andy Core, load Analytics GTM inspector script only when its debug setting is ON</label>
-                <p class="description">Effective only if the source-side Core compatibility PR is installed and this switch is enabled with emergency OFF cleared. This does not disable GTM, tracking or analytics business logic.</p></td></tr>
-                <tr><th>Core Newsletter JS</th><td><label><input type="checkbox" name="andy_speed[newsletter_defer]" value="1" <?php checked( $settings['newsletter_defer'] ); ?>> Add defer to the Core-owned Newsletter script (never unload it)</label><p class="description">Keeps newsletter forms and confirmation/unsubscribe token actions available. Core compatibility required.</p></td></tr>
-                <tr><th>BYL V3 CSS bundle</th><td><label><input type="checkbox" name="andy_speed[byl_v3_common_css_bundle]" value="1" <?php checked( $settings['byl_v3_common_css_bundle'] ); ?>> Use the verified common CSS bundle on compatible BYL V3 themes</label><p class="description">Disabled by default. Requires the separate BYL theme PR, and fails closed to individual stylesheets when any source checksum differs.</p></td></tr>
-                <tr><th>PairDoll mobile hero stability</th><td><label><input type="checkbox" name="andy_speed[pairdoll_mobile_slider_stability]" value="1" <?php checked( $settings['pairdoll_mobile_slider_stability'] ); ?>> Prevent timed auto-rotation of the PairDoll homepage mobile Elementor slides</label><p class="description">Experimental and OFF by default. Exact domain, Woodmart child theme, homepage and mobile-only widget ID are required. Manual navigation and desktop slider remain unchanged. Requires Safe mode with Emergency OFF unchecked; perform before/after mobile Lighthouse and visible UAT.</p></td></tr>
-                <tr><th>PairDoll mobile hero WebP</th><td><label><input type="checkbox" name="andy_speed[pairdoll_mobile_hero_webp]" value="1" <?php checked( $settings['pairdoll_mobile_hero_webp'] ); ?>> Use verified 1300px R2 WebP for exact homepage mobile first slide</label><p class="description">OFF by default. Scoped to homepage #2779, Elementor mobile slider #9c0199b and first slide #ad189c2. Preloads mobile only; no original image deletion.</p></td></tr>
-                <tr><th>PairDoll responsive logo WebP</th><td><label><input type="checkbox" name="andy_speed[pairdoll_logo_webp]" value="1" <?php checked( $settings['pairdoll_logo_webp'] ); ?>> Use verified R2 WebP 300w/500w for exact full-size logo attachment #77910</label><p class="description">OFF by default. Retains original attachment and other sizes. Validate PC/mobile header and source selection before release.</p></td></tr>
+                <tr><th>紧急关闭优化</th><td><label><input type="checkbox" name="andy_speed[emergency_off]" value="1" <?php checked( $settings['emergency_off'] ); ?>> 勾选后关闭全部性能优化（用于紧急回退）</label></td></tr>
+                <tr><th>Andy Core 诊断功能</th><td><label><input type="checkbox" name="andy_speed[analytics_diagnostics_debug_only]" value="1" <?php checked( $settings['analytics_diagnostics_debug_only'] ); ?>> 仅在兼容的 Andy Core 已开启调试时，加载 GTM 分析诊断脚本</label>
+                <p class="description">需要安装兼容的 Andy Core 版本，并启用此项、取消紧急关闭后才会生效；不会关闭 GTM、转化跟踪或其他分析业务功能。</p></td></tr>
+                <tr><th>订阅脚本延迟加载</th><td><label><input type="checkbox" name="andy_speed[newsletter_defer]" value="1" <?php checked( $settings['newsletter_defer'] ); ?>> 对 Andy Core 的邮件订阅脚本启用延迟执行（不会移除脚本）</label><p class="description">保留邮件订阅表单、确认订阅及退订功能；需要兼容的 Andy Core 版本。</p></td></tr>
+                <tr><th>BYL V3 样式合并</th><td><label><input type="checkbox" name="andy_speed[byl_v3_common_css_bundle]" value="1" <?php checked( $settings['byl_v3_common_css_bundle'] ); ?>> 在兼容的 BYL V3 主题上使用已验证的公共 CSS 合并文件</label><p class="description">默认关闭。需要配套的 BYL 主题版本；任何源 CSS 校验值不匹配时，自动恢复为原来的独立样式文件。</p></td></tr>
+                <tr><th>PairDoll 手机轮播稳定性</th><td><label><input type="checkbox" name="andy_speed[pairdoll_mobile_slider_stability]" value="1" <?php checked( $settings['pairdoll_mobile_slider_stability'] ); ?>> 关闭 PairDoll 首页手机轮播的自动切换</label><p class="description">实验功能，默认关闭。仅匹配 PairDoll 指定域名、Woodmart 子主题、首页及手机轮播组件；保留手动切换，桌面轮播不变。须启用「安全优化」并取消「紧急关闭优化」，建议对比手机端 Lighthouse 测速及页面实际效果。</p></td></tr>
+                <tr><th>PairDoll 手机首屏 WebP</th><td><label><input type="checkbox" name="andy_speed[pairdoll_mobile_hero_webp]" value="1" <?php checked( $settings['pairdoll_mobile_hero_webp'] ); ?>> 手机首页首张轮播图使用已验证的 1300px R2 WebP 图片</label><p class="description">默认关闭。仅对首页 #2779、手机轮播 #9c0199b 和首张幻灯片 #ad189c2 生效。只在手机端预加载，不删除原图。</p></td></tr>
+                <tr><th>PairDoll Logo 响应式 WebP</th><td><label><input type="checkbox" name="andy_speed[pairdoll_logo_webp]" value="1" <?php checked( $settings['pairdoll_logo_webp'] ); ?>> 对原始 Logo 附件 #77910 使用已验证的 R2 WebP（300px / 500px）</label><p class="description">默认关闭。保留原始 Logo 附件及其他尺寸。启用后需检查电脑、手机端页头显示和图片清晰度。</p></td></tr>
                 </tbody></table>
-                <?php submit_button( 'Save Andy Speed settings' ); ?>
+                <?php submit_button( '保存 Andy Speed 设置' ); ?>
             </form>
-            <p><strong>Effective Core diagnostics opt-in:</strong> <?php echo $active ? 'ON (requires Core integration)' : 'OFF'; ?></p>
-            <h2>Read-only environment</h2>
+            <p><strong>Andy Core 诊断功能实际状态：</strong> <?php echo $active ? '已启用（需要 Core 兼容支持）' : '未启用'; ?></p>
+            <h2>只读环境信息</h2>
             <table class="widefat striped" style="max-width:820px"><tbody>
-            <tr><th>Site</th><td><?php echo esc_html( $data['site']['home'] ); ?></td></tr>
-            <tr><th>WordPress / PHP</th><td><?php echo esc_html( $data['site']['wordpress'] . ' / ' . $data['runtime']['php_version'] ); ?></td></tr>
-            <tr><th>Theme</th><td><?php echo esc_html( $data['theme']['name'] . ' ' . $data['theme']['version'] ); ?></td></tr>
-            <tr><th>Registered plugins</th><td><?php echo esc_html( count( $data['plugins']['regular'] ) ); ?></td></tr>
-            <tr><th>Autoloaded option bytes</th><td><?php echo esc_html( number_format_i18n( $data['autoload']['bytes'] ) ); ?></td></tr>
+            <tr><th>网站地址</th><td><?php echo esc_html( $data['site']['home'] ); ?></td></tr>
+            <tr><th>WordPress / PHP 版本</th><td><?php echo esc_html( $data['site']['wordpress'] . ' / ' . $data['runtime']['php_version'] ); ?></td></tr>
+            <tr><th>当前主题</th><td><?php echo esc_html( $data['theme']['name'] . ' ' . $data['theme']['version'] ); ?></td></tr>
+            <tr><th>已安装插件数量</th><td><?php echo esc_html( count( $data['plugins']['regular'] ) ); ?></td></tr>
+            <tr><th>自动加载配置大小（字节）</th><td><?php echo esc_html( number_format_i18n( $data['autoload']['bytes'] ) ); ?></td></tr>
             </tbody></table>
-            <h2>Export private comparison snapshot</h2>
-            <p>Same operational inventory fields as the GTranslater audit, with mode and safety settings added. Probe runs only on explicit export.</p>
+            <h2>导出只读诊断报告</h2>
+            <p>导出当前插件、服务器环境及安全开关等信息，方便对比优化前后的状态。只有点击导出按钮时才会执行首页探测，不会修改网站内容。</p>
             <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
                 <input type="hidden" name="action" value="andy_speed_export">
                 <?php wp_nonce_field( 'andy_speed_export' ); ?>
-                <?php submit_button( 'Export read-only JSON snapshot', 'secondary' ); ?>
+                <?php submit_button( '导出只读 JSON 报告', 'secondary' ); ?>
             </form>
         </div>
         <?php
