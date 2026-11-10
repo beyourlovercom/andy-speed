@@ -79,6 +79,7 @@ final class Andy_Speed_Pairdoll {
      * remains in WordPress; modern variants preserve aspect and transparency.
      */
     public static function logo_srcset( $attr, $attachment, $size ) {
+        if ( ! function_exists( 'get_queried_object_id' ) || 2779 !== (int) get_queried_object_id() ) { return $attr; }
         if ( ! self::frontend_enabled( 'pairdoll_logo_webp' ) || ! is_object( $attachment )
             || self::BRAND_LOGO_ATTACHMENT_ID !== (int) ( $attachment->ID ?? 0 )
             || 'full' !== $size || ! is_array( $attr ) ) {
