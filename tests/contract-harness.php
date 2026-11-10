@@ -7,7 +7,7 @@ $assert = static function ( $ok, $message ) {
 foreach ( array( 'check_admin_referer', 'current_user_can', 'wp_safe_remote_get', 'wp_safe_redirect', 'update_option', 'get_plugins', 'get_mu_plugins', 'get_dropins', 'autoload', 'analytics_diagnostics_debug_only' ) as $needle ) {
     $assert( strpos( $source, $needle ) !== false, 'Missing audit/safety contract: ' . $needle );
 }
-$allowed_pairdoll_head = "add_action( 'wp_head', array( 'Andy_Speed_Pairdoll', 'mobile_hero_webp' ), 99, 0 );";
+$allowed_pairdoll_head = "add_action( 'wp_head', array( 'Andy_Speed_Pairdoll', 'original_mobile_hero_preload' ), 99, 0 );";
 $assert( substr_count( $source, 'wp_head' ) === 1
     && strpos( $source, $allowed_pairdoll_head ) !== false,
     'PairDoll exact opt-in home-only preload callback required; generic wp_head forbidden' );
