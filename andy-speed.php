@@ -26,6 +26,8 @@ final class Andy_Speed {
             'byl_v3_common_css_bundle' => false,
             'newsletter_defer' => false,
             'pairdoll_mobile_slider_stability' => false,
+            'pairdoll_mobile_hero_webp' => false,
+            'pairdoll_logo_webp' => false,
         );
     }
 
@@ -42,6 +44,8 @@ final class Andy_Speed {
             'byl_v3_common_css_bundle' => ! empty( $raw['byl_v3_common_css_bundle'] ),
             'newsletter_defer' => ! empty( $raw['newsletter_defer'] ),
             'pairdoll_mobile_slider_stability' => ! empty( $raw['pairdoll_mobile_slider_stability'] ),
+            'pairdoll_mobile_hero_webp' => ! empty( $raw['pairdoll_mobile_hero_webp'] ),
+            'pairdoll_logo_webp' => ! empty( $raw['pairdoll_logo_webp'] ),
         );
     }
 
@@ -137,6 +141,8 @@ final class Andy_Speed {
     public static function boot() {
         require_once __DIR__ . '/includes/pairdoll-performance.php';
         add_action( 'elementor/frontend/widget/before_render', array( 'Andy_Speed_Pairdoll', 'stable_mobile_slider' ), 10, 1 );
+        add_action( 'wp_head', array( 'Andy_Speed_Pairdoll', 'mobile_hero_webp' ), 99, 0 );
+        add_filter( 'wp_get_attachment_image_attributes', array( 'Andy_Speed_Pairdoll', 'logo_srcset' ), 10, 3 );
         // Only optional filters: no global rewrite of scripts, styles or fonts.
         add_filter( 'andy_core_analytics_debug_only', array( __CLASS__, 'analytics_debug_only' ), 10, 1 );
         add_filter( 'andy_speed_byl_v3_common_css_bundle', array( __CLASS__, 'byl_v3_common_css_bundle' ), 10, 1 );
@@ -356,6 +362,8 @@ final class Andy_Speed {
                 <tr><th>Core Newsletter JS</th><td><label><input type="checkbox" name="andy_speed[newsletter_defer]" value="1" <?php checked( $settings['newsletter_defer'] ); ?>> Add defer to the Core-owned Newsletter script (never unload it)</label><p class="description">Keeps newsletter forms and confirmation/unsubscribe token actions available. Core compatibility required.</p></td></tr>
                 <tr><th>BYL V3 CSS bundle</th><td><label><input type="checkbox" name="andy_speed[byl_v3_common_css_bundle]" value="1" <?php checked( $settings['byl_v3_common_css_bundle'] ); ?>> Use the verified common CSS bundle on compatible BYL V3 themes</label><p class="description">Disabled by default. Requires the separate BYL theme PR, and fails closed to individual stylesheets when any source checksum differs.</p></td></tr>
                 <tr><th>PairDoll mobile hero stability</th><td><label><input type="checkbox" name="andy_speed[pairdoll_mobile_slider_stability]" value="1" <?php checked( $settings['pairdoll_mobile_slider_stability'] ); ?>> Prevent timed auto-rotation of the PairDoll homepage mobile Elementor slides</label><p class="description">Experimental and OFF by default. Exact domain, Woodmart child theme, homepage and mobile-only widget ID are required. Manual navigation and desktop slider remain unchanged. Requires Safe mode with Emergency OFF unchecked; perform before/after mobile Lighthouse and visible UAT.</p></td></tr>
+                <tr><th>PairDoll mobile hero WebP</th><td><label><input type="checkbox" name="andy_speed[pairdoll_mobile_hero_webp]" value="1" <?php checked( $settings['pairdoll_mobile_hero_webp'] ); ?>> Use verified 1300px R2 WebP for exact homepage mobile first slide</label><p class="description">OFF by default. Scoped to homepage #2779, Elementor mobile slider #9c0199b and first slide #ad189c2. Preloads mobile only; no original image deletion.</p></td></tr>
+                <tr><th>PairDoll responsive logo WebP</th><td><label><input type="checkbox" name="andy_speed[pairdoll_logo_webp]" value="1" <?php checked( $settings['pairdoll_logo_webp'] ); ?>> Use verified R2 WebP 300w/500w for exact full-size logo attachment #77910</label><p class="description">OFF by default. Retains original attachment and other sizes. Validate PC/mobile header and source selection before release.</p></td></tr>
                 </tbody></table>
                 <?php submit_button( 'Save Andy Speed settings' ); ?>
             </form>
