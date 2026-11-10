@@ -15,6 +15,7 @@ jobs:
           php -l includes/pairdoll-performance.php
           php tests/pairdoll-performance-harness.php
           php tests/plugin-settings-link-harness.php
+          php tests/admin-zh-cn-copy-harness.php
           php tests/safety-harness.php
           php tests/contract-harness.php
           php tests/byl-css-bundle-contract.php
