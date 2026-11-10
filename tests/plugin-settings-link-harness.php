@@ -22,10 +22,10 @@ check_link( isset( $GLOBALS['speed_test_filters'][$key] ), 'exact plugin action 
 $original = array( '<a href="plugins.php?action=deactivate">Deactivate</a>' );
 $result = call_user_func( $GLOBALS['speed_test_filters'][$key], $original );
 check_link( count( $result ) === 2 && $result[1] === $original[0], 'Deactivate and existing links preserved' );
-check_link( strpos( $result[0], '>Settings</a>' ) !== false, 'Settings link visible next to Deactivate' );
+check_link( strpos( $result[0], '>设置</a>' ) !== false, 'Chinese settings link visible next to Deactivate' );
 check_link( strpos( $result[0], '/wp-admin/tools.php?page=andy-speed' ) !== false, 'Settings goes to existing Tools page' );
 $GLOBALS['speed_test_manage'] = false;
 check_link( Andy_Speed::plugin_settings_link( $original ) === $original, 'settings link hidden without manage_options' );
 check_link( Andy_Speed::defaults()['mode'] === 'audit' && Andy_Speed::defaults()['emergency_off'] === true, 'optimization defaults unchanged' );
-check_link( Andy_Speed::VERSION === '0.3.1-dev', 'development package version bumped' );
+check_link( Andy_Speed::VERSION === '0.3.2-dev', 'development package version bumped' );
 echo "PASS: plugin-list Settings link contract\n";
