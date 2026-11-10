@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Andy Speed
  * Description: WordPress 性能诊断与可回滚优化插件；默认仅审计，所有优化默认关闭。
- * Version: 0.3.2-dev
+ * Version: 0.3.3-dev
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: beyourlovercom
@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 if ( ! class_exists( 'Andy_Speed' ) ) {
 final class Andy_Speed {
-    const VERSION = '0.3.2-dev';
+    const VERSION = '0.3.3-dev';
     const OPTION = 'andy_speed_settings_v1';
     const SLUG = 'andy-speed';
 
@@ -26,8 +26,7 @@ final class Andy_Speed {
             'byl_v3_common_css_bundle' => false,
             'newsletter_defer' => false,
             'pairdoll_mobile_slider_stability' => false,
-            'pairdoll_mobile_hero_webp' => false,
-            'pairdoll_logo_webp' => false,
+            'pairdoll_mobile_hero_preload' => false,
         );
     }
 
@@ -44,8 +43,7 @@ final class Andy_Speed {
             'byl_v3_common_css_bundle' => ! empty( $raw['byl_v3_common_css_bundle'] ),
             'newsletter_defer' => ! empty( $raw['newsletter_defer'] ),
             'pairdoll_mobile_slider_stability' => ! empty( $raw['pairdoll_mobile_slider_stability'] ),
-            'pairdoll_mobile_hero_webp' => ! empty( $raw['pairdoll_mobile_hero_webp'] ),
-            'pairdoll_logo_webp' => ! empty( $raw['pairdoll_logo_webp'] ),
+            'pairdoll_mobile_hero_preload' => ! empty( $raw['pairdoll_mobile_hero_preload'] ),
         );
     }
 
@@ -141,8 +139,7 @@ final class Andy_Speed {
     public static function boot() {
         require_once __DIR__ . '/includes/pairdoll-performance.php';
         add_action( 'elementor/frontend/widget/before_render', array( 'Andy_Speed_Pairdoll', 'stable_mobile_slider' ), 10, 1 );
-        add_action( 'wp_head', array( 'Andy_Speed_Pairdoll', 'mobile_hero_webp' ), 99, 0 );
-        add_filter( 'wp_get_attachment_image_attributes', array( 'Andy_Speed_Pairdoll', 'logo_srcset' ), 10, 3 );
+        add_action( 'wp_head', array( 'Andy_Speed_Pairdoll', 'original_mobile_hero_preload' ), 99, 0 );
         // Only optional filters: no global rewrite of scripts, styles or fonts.
         add_filter( 'andy_core_analytics_debug_only', array( __CLASS__, 'analytics_debug_only' ), 10, 1 );
         add_filter( 'andy_speed_byl_v3_common_css_bundle', array( __CLASS__, 'byl_v3_common_css_bundle' ), 10, 1 );
@@ -360,7 +357,7 @@ final class Andy_Speed {
         ?>
         <div class="wrap">
             <h1>Andy Speed <small><?php echo esc_html( self::VERSION ); ?></small></h1>
-            <p><strong>独立性能诊断与可选优化插件。</strong> 默认处于「仅审计」模式，并开启紧急关闭保护。插件不会擅自修改 CSS、JS、字体文件，不会自动清理缓存、创建后台任务，也不会修改付款流程或客户数据。</p>
+            <p><strong>独立性能诊断与可选优化插件。</strong> 默认处于「仅审计」模式，并开启紧急关闭保护。插件不会擅自修改 CSS、JS、字体文件，不会自动清理缓存、创建后台任务，也不会修改付款流程或客户数据。<strong>图片保持原有格式和质量，不进行二次压缩或转码。</strong></p>
             <?php if ( isset( $_GET['saved'] ) ) : ?><div class="notice notice-success"><p>设置已保存。</p></div><?php endif; ?>
             <h2>安全运行设置</h2>
             <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
@@ -377,8 +374,7 @@ final class Andy_Speed {
                 <tr><th>订阅脚本延迟加载</th><td><label><input type="checkbox" name="andy_speed[newsletter_defer]" value="1" <?php checked( $settings['newsletter_defer'] ); ?>> 对 Andy Core 的邮件订阅脚本启用延迟执行（不会移除脚本）</label><p class="description">保留邮件订阅表单、确认订阅及退订功能；需要兼容的 Andy Core 版本。</p></td></tr>
                 <tr><th>BYL V3 样式合并</th><td><label><input type="checkbox" name="andy_speed[byl_v3_common_css_bundle]" value="1" <?php checked( $settings['byl_v3_common_css_bundle'] ); ?>> 在兼容的 BYL V3 主题上使用已验证的公共 CSS 合并文件</label><p class="description">默认关闭。需要配套的 BYL 主题版本；任何源 CSS 校验值不匹配时，自动恢复为原来的独立样式文件。</p></td></tr>
                 <tr><th>PairDoll 手机轮播稳定性</th><td><label><input type="checkbox" name="andy_speed[pairdoll_mobile_slider_stability]" value="1" <?php checked( $settings['pairdoll_mobile_slider_stability'] ); ?>> 关闭 PairDoll 首页手机轮播的自动切换</label><p class="description">实验功能，默认关闭。仅匹配 PairDoll 指定域名、Woodmart 子主题、首页及手机轮播组件；保留手动切换，桌面轮播不变。须启用「安全优化」并取消「紧急关闭优化」，建议对比手机端 Lighthouse 测速及页面实际效果。</p></td></tr>
-                <tr><th>PairDoll 手机首屏 WebP</th><td><label><input type="checkbox" name="andy_speed[pairdoll_mobile_hero_webp]" value="1" <?php checked( $settings['pairdoll_mobile_hero_webp'] ); ?>> 手机首页首张轮播图使用已验证的 1300px R2 WebP 图片</label><p class="description">默认关闭。仅对首页 #2779、手机轮播 #9c0199b 和首张幻灯片 #ad189c2 生效。只在手机端预加载，不删除原图。</p></td></tr>
-                <tr><th>PairDoll Logo 响应式 WebP</th><td><label><input type="checkbox" name="andy_speed[pairdoll_logo_webp]" value="1" <?php checked( $settings['pairdoll_logo_webp'] ); ?>> 对原始 Logo 附件 #77910 使用已验证的 R2 WebP（300px / 500px）</label><p class="description">默认关闭。保留原始 Logo 附件及其他尺寸。启用后需检查电脑、手机端页头显示和图片清晰度。</p></td></tr>
+                <tr><th>PairDoll 手机首屏原图预加载</th><td><label><input type="checkbox" name="andy_speed[pairdoll_mobile_hero_preload]" value="1" <?php checked( $settings['pairdoll_mobile_hero_preload'] ); ?>> 优先加载手机首页现有轮播原图，不替换图片</label><p class="description">默认关闭。仅针对首页 #2779 的手机首屏原图进行预加载；保留原始 JPEG / PNG / WebP 格式，不重新编码、不二次压缩、不生成或删除图片。开启后请复测手机端速度。</p></td></tr>
                 </tbody></table>
                 <?php submit_button( '保存 Andy Speed 设置' ); ?>
             </form>
