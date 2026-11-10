@@ -27,5 +27,5 @@ check_link( strpos( $result[0], '/wp-admin/tools.php?page=andy-speed' ) !== fals
 $GLOBALS['speed_test_manage'] = false;
 check_link( Andy_Speed::plugin_settings_link( $original ) === $original, 'settings link hidden without manage_options' );
 check_link( Andy_Speed::defaults()['mode'] === 'audit' && Andy_Speed::defaults()['emergency_off'] === true, 'optimization defaults unchanged' );
-check_link( Andy_Speed::VERSION === '0.3.2-dev', 'development package version bumped' );
+check_link( Andy_Speed::VERSION === '0.3.3-dev', 'development package version bumped' );
 echo "PASS: plugin-list Settings link contract\n";
